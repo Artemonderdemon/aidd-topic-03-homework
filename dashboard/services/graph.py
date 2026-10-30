@@ -2,13 +2,19 @@ from datetime import timedelta
 
 from plotly.graph_objs import Scatter
 from plotly.offline import plot
-from tinkoff.invest import CandleInterval, Client
-from tinkoff.invest.utils import now
 
 from config.settings import TINKOFF_TOKEN
 
 
 def get_graph(share):
+    try:
+        from tinkoff.invest import CandleInterval, Client
+        from tinkoff.invest.utils import now
+    except ImportError as error:
+        raise RuntimeError(
+            "Historical market data requires the optional Tinkoff Invest SDK."
+        ) from error
+
     with Client(TINKOFF_TOKEN) as client:
         x_data, y_data = [], []
         for candle in client.get_all_candles(

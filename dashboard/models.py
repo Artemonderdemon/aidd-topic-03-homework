@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -19,3 +20,71 @@ class Share(models.Model):
     class Meta:
         verbose_name = "Акция"
         verbose_name_plural = "Акции"
+
+    def __str__(self):
+        return f"{self.ticker} — {self.name}"
+
+
+class WatchlistItem(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="watchlist_items",
+    )
+    share = models.ForeignKey(
+        Share, on_delete=models.CASCADE, related_name="watchlist_items"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("share__name",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user", "share"), name="unique_user_watchlist_share"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.user} — {self.share}"
+
+
+class PriceAlert(models.Model):
+    watchlist_item = models.ForeignKey(
+        WatchlistItem, on_delete=models.CASCADE, related_name="price_alerts"
+    )
+    target_price = models.DecimalField(max_digits=20, decimal_places=8)
+    is_active = models.BooleanField(default=True)
+    last_observed_above = models.BooleanField(null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("target_price",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=("watchlist_item", "target_price"),
+                name="unique_watchlist_target_price",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(target_price__gt=0),
+                name="price_alert_target_positive",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.watchlist_item.share.ticker} @ {self.target_price}"
+
+
+class AlertNotification(models.Model):
+    price_alert = models.ForeignKey(
+        PriceAlert, on_delete=models.CASCADE, related_name="notifications"
+    )
+    observed_price = models.DecimalField(max_digits=20, decimal_places=8)
+    triggered_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-triggered_at",)
+
+    @property
+    def user(self):
+        return self.price_alert.watchlist_item.user

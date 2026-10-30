@@ -8,57 +8,54 @@ from .forms import AuthForm, RegistrationForm
 class AuthView(View):
     """Авторизация"""
 
-    @staticmethod
-    def get(request):
-        return render(request, "user/auth.html", {"form": AuthForm})
+    def get(self, request):
+        return render(request, "user/auth.html", {"form": AuthForm()})
 
-    @staticmethod
-    def post(request):
+    def post(self, request):
         form = AuthForm(request.POST)
-        user = authenticate(
-            request, username=form.data["email"].lower(), password=form.data["password"]
-        )
+        if not form.is_valid():
+            return render(request, "user/auth.html", {"form": form})
 
+        user = authenticate(
+            request,
+            username=form.cleaned_data["email"],
+            password=form.cleaned_data["password"],
+        )
         if user is not None:
             login(request, user)
             return redirect("dashboard:index")
-        else:
-            return render(
-                request,
-                "user/auth.html",
-                {
-                    "form": form,
-                    "error": "Неверный логин или пароль! Повторите попытку.",
-                },
-            )
+
+        return render(
+            request,
+            "user/auth.html",
+            {
+                "form": form,
+                "error": "Неверный логин или пароль! Повторите попытку.",
+            },
+        )
 
 
 class RegistrationView(View):
     """Регистрация"""
 
-    @staticmethod
-    def get(request):
-        return render(request, "user/registration.html", {"form": RegistrationForm})
+    def get(self, request):
+        return render(
+            request, "user/registration.html", {"form": RegistrationForm()}
+        )
 
-    @staticmethod
-    def post(request):
+    def post(self, request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             return redirect("dashboard:index")
-        else:
-            return render(
-                request,
-                "user/registration.html",
-                {"form": form, "error": form.errors["__all__"].data[0].message},
-            )
+
+        return render(request, "user/registration.html", {"form": form})
 
 
 class LogoutView(View):
     """Выход"""
 
-    @staticmethod
-    def get(request):
+    def get(self, request):
         logout(request)
         return redirect("dashboard:index")

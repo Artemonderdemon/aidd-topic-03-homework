@@ -1,0 +1,15 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+    <title>Удалить акцию из мониторинга</title>
+{% endblock %}
+
+{% block content %}
+    <h1>Удалить акцию из мониторинга?</h1>
+    <p>{{ object.share.ticker }} — связанные целевые уровни и уведомления также будут удалены.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Удалить</button>
+        <a class="btn btn-secondary" href="{% url 'dashboard:watchlist' %}">Отмена</a>
+    </form>
+{% endblock %}

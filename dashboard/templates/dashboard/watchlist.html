@@ -1,0 +1,45 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+    <title>Мой мониторинг акций</title>
+{% endblock %}
+
+{% block content %}
+    <h1>Мой мониторинг акций</h1>
+    <p>Целевые цены отслеживаются при обновлении котировок. Уведомление создаётся при пересечении цены в любом направлении.</p>
+    <a class="btn btn-primary mb-3" href="{% url 'dashboard:watchlist-add' %}">Добавить акцию</a>
+
+    {% for item in watchlist_items %}
+        <section class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">
+                    <a href="{% url 'dashboard:detail' item.share.pk %}">{{ item.share.ticker }}</a>
+                    — {{ item.share.name }}
+                </h2>
+                <p>Текущая цена: {{ item.share.last_price|default:"Нет данных" }} {{ item.share.currency }}</p>
+
+                <h3 class="h6">Целевые уровни</h3>
+                {% for alert in item.price_alerts.all %}
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span>{{ alert.target_price }} {{ item.share.currency }}</span>
+                        {% if alert.last_observed_above is None %}
+                            <span class="text-muted">Ожидается первое наблюдение цены</span>
+                        {% elif alert.last_observed_above %}
+                            <span class="text-muted">Цена выше цели</span>
+                        {% else %}
+                            <span class="text-muted">Цена ниже цели</span>
+                        {% endif %}
+                        <a class="btn btn-sm btn-outline-danger" href="{% url 'dashboard:alert-remove' alert.pk %}">Удалить уровень</a>
+                    </div>
+                {% empty %}
+                    <p>Целевые уровни не заданы.</p>
+                {% endfor %}
+
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'dashboard:alert-add' item.pk %}">Добавить целевой уровень</a>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'dashboard:watchlist-remove' item.pk %}">Удалить из мониторинга</a>
+            </div>
+        </section>
+    {% empty %}
+        <p>Список наблюдения пуст. Добавьте акцию, чтобы начать мониторинг.</p>
+    {% endfor %}
+{% endblock %}

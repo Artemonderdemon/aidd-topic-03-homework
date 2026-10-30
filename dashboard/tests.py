@@ -1,12 +1,23 @@
+from decimal import Decimal
+from unittest.mock import patch
+
+from django.contrib.auth import get_user_model
+from django.test import TestCase
 from django.urls import reverse
+from rest_framework.test import APIClient
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from dashboard.models import Share
+from dashboard.tasks import update_last_price
 
 
 class DashboardTests(APITestCase):
     def setUp(self) -> None:
+        user = get_user_model().objects.create_user(
+            username="tester", password="Strong!TestPassword438"
+        )
+        self.client.force_login(user=user)
         self.apple_share = Share.objects.create(
             figi="BBG000B9XRY4",
             isin="US0378331005",
@@ -32,6 +43,11 @@ class DashboardTests(APITestCase):
     def test_share_list_html(self):
         response = self.client.get(reverse("dashboard:index"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_authenticated_user_can_open_share_form(self):
+        response = self.client.get(reverse("dashboard:create"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertContains(response, "Сохранить")
 
     def test_share_list(self):
         response = self.client.get("/api/v1/shares/")
@@ -120,3 +136,39 @@ class DashboardTests(APITestCase):
     def test_share_delete_invalid(self):
         response = self.client.delete("/api/v1/shares/3/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_api_allows_anonymous_reads_but_rejects_writes(self):
+        client = APIClient()
+
+        response = client.get("/api/v1/shares/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = client.post("/api/v1/shares/", self.second_company, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_share_html_detail_missing_returns_404(self):
+        response = self.client.get(reverse("dashboard:detail", args=[999]))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class UpdateLastPriceTests(TestCase):
+    def test_updates_price_trend_and_timestamp(self):
+        share = Share.objects.create(
+            figi="FIGI-TEST",
+            isin="TEST00000001",
+            name="Test Share",
+            ticker="TEST",
+            currency="usd",
+            uid="uid-test",
+            last_price=100.0,
+        )
+
+        with patch(
+            "dashboard.tasks.get_last_data", return_value=Decimal("100.5")
+        ):
+            update_last_price.run()
+
+        share.refresh_from_db()
+        self.assertEqual(share.last_price, 100.5)
+        self.assertTrue(share.is_trend_high)
+        self.assertIsNotNone(share.updated_at)

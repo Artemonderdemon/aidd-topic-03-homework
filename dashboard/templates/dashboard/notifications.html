@@ -1,0 +1,43 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+    <title>Уведомления</title>
+{% endblock %}
+
+{% block content %}
+    <h1>Уведомления о целевых ценах</h1>
+    {% for notification in notifications %}
+        <article class="card mb-2">
+            <div class="card-body">
+                <p>
+                    {{ notification.price_alert.watchlist_item.share.ticker }} пересекла
+                    уровень {{ notification.price_alert.target_price }}:
+                    текущая наблюдаемая цена {{ notification.observed_price }}
+                    {{ notification.price_alert.watchlist_item.share.currency }}.
+                </p>
+                <time>{{ notification.triggered_at }}</time>
+                {% if notification.read_at %}
+                    <span class="badge bg-secondary">Прочитано</span>
+                {% else %}
+                    <form method="post" action="{% url 'dashboard:notification-read' notification.pk %}">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-outline-primary" type="submit">Отметить прочитанным</button>
+                    </form>
+                {% endif %}
+            </div>
+        </article>
+    {% empty %}
+        <p>Уведомлений пока нет.</p>
+    {% endfor %}
+    {% if is_paginated %}
+        <nav aria-label="Страницы уведомлений">
+            {% if page_obj.has_previous %}
+                <a class="btn btn-outline-primary" href="?page={{ page_obj.previous_page_number }}">Назад</a>
+            {% endif %}
+            <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a class="btn btn-outline-primary" href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+            {% endif %}
+        </nav>
+    {% endif %}
+{% endblock %}

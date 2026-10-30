@@ -19,4 +19,4 @@ class ShareViewSet(viewsets.ModelViewSet):
     filter_backends = (OrderingFilter, filters.DjangoFilterBackend, SearchFilter)
     filterset_class = ShareFilter
     ordering_fields = ["name", "ticker"]
-    search_fields = ["$name"]
+    search_fields = ["name"]
