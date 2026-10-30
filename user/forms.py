@@ -1,70 +1,124 @@
 from django import forms
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
 from user.models import User
 
 
 class RegistrationForm(forms.Form):
-    """Форма регистрации пользователей"""
+    """Registration form using email as the username."""
 
     email = forms.EmailField(
         required=True,
+        label="Email",
         widget=forms.EmailInput(
-            attrs={"class": "form-control my-3 p-4", "placeholder": "Email"}
+            attrs={
+                "class": "form-control form-control-lg",
+                "placeholder": "Email",
+                "autocomplete": "email",
+            }
         ),
     )
     password1 = forms.CharField(
         required=True,
+        label="Пароль",
         widget=forms.PasswordInput(
-            attrs={"class": "form-control my-3 p-4", "placeholder": "Пароль"}
+            attrs={
+                "class": "form-control form-control-lg",
+                "placeholder": "Пароль",
+                "autocomplete": "new-password",
+            }
         ),
     )
     password2 = forms.CharField(
         required=True,
+        label="Повторите пароль",
         widget=forms.PasswordInput(
-            attrs={"class": "form-control my-3 p-4", "placeholder": "Повторите пароль"}
+            attrs={
+                "class": "form-control form-control-lg",
+                "placeholder": "Повторите пароль",
+                "autocomplete": "new-password",
+            }
         ),
     )
 
+    def clean_email(self) -> str:
+        email = self.cleaned_data["email"].strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise ValidationError(
+                "Данный e-mail уже зарегистрирован! Введите другой e-mail или "
+                "воспользуйтесь формой авторизации."
+            )
+        return email
+
     def clean(self):
-        super().clean()
-        email = self.cleaned_data["email"]
-        password1 = self.cleaned_data["password1"]
-        password2 = self.cleaned_data["password2"]
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+
         if password1 and password2 and password1 != password2:
-            errors = ["Введенные пароли не совпадают"]
-            raise ValidationError(errors)
+            self.add_error("password2", "Введенные пароли не совпадают")
 
-        user = User.objects.filter(email=email)
+        if password1 and not self.errors:
+            try:
+                validate_password(password1)
+            except ValidationError as exc:
+                self.add_error("password1", exc)
 
-        if user:
-            errors = [
-                "Данный e-mail уже зарегистрирован! Введите другой e-mail или"
-                " воспользуйтесь формой авторизации."
-            ]
-            raise ValidationError(errors)
+        return cleaned_data
 
-    def save(self):
+    def save(self) -> User:
         email = self.cleaned_data["email"]
         password = self.cleaned_data["password1"]
-        User.objects.create_user(email, email, password)
-        user = authenticate(username=email, password=password)
-        return user
+        return User.objects.create_user(
+            username=email,
+            email=email,
+            password=password,
+        )
 
 
 class AuthForm(forms.Form):
-    """Форма авторизации пользователей"""
+    """Authentication form with email normalization."""
 
     email = forms.EmailField(
         required=True,
+        label="Email",
         widget=forms.EmailInput(
-            attrs={"class": "form-control my-3 p-4", "placeholder": "Email"}
+            attrs={
+                "class": "form-control form-control-lg",
+                "placeholder": "Email",
+                "autocomplete": "email",
+            }
         ),
     )
     password = forms.CharField(
         required=True,
+        label="Пароль",
         widget=forms.PasswordInput(
-            attrs={"class": "form-control my-3 p-4", "placeholder": "Пароль"}
+            attrs={
+                "class": "form-control form-control-lg",
+                "placeholder": "Пароль",
+                "autocomplete": "current-password",
+            }
         ),
     )
+
+    def __init__(self, *args, **kwargs):
+        self.user = None
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        email = cleaned_data.get("email")
+        password = cleaned_data.get("password")
+        if email and password:
+            self.user = authenticate(
+                username=email.strip().lower(),
+                password=password,
+            )
+            if self.user is None:
+                raise ValidationError(
+                    "Неверный логин или пароль! Повторите попытку."
+                )
+        return cleaned_data

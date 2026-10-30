@@ -1,0 +1,29 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Стратегии — Investing{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Стратегии</h1>
+  <a href="{% url 'dashboard:strategy_create' %}" class="btn btn-primary">Создать стратегию</a>
+</div>
+{% if strategies %}
+<table class="table table-striped align-middle">
+  <thead><tr><th>Название</th><th>Акция</th><th>Условие</th><th>Порог</th><th>Действие</th><th>Кол-во</th><th>Активна</th><th>Сработала</th></tr></thead>
+  <tbody>
+  {% for s in strategies %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td>{{ s.share.ticker }}</td>
+      <td>{{ s.get_condition_display }}</td>
+      <td>{{ s.threshold }}</td>
+      <td>{{ s.get_action_display }}</td>
+      <td>{{ s.quantity }}</td>
+      <td>{% if s.is_active %}Да{% else %}Нет{% endif %}</td>
+      <td>{% if s.triggered %}Да{% else %}Нет{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">Стратегий нет.</div>
+{% endif %}
+{% endblock %}

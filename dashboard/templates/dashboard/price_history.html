@@ -1,0 +1,18 @@
+{% extends "dashboard/base.html" %}
+{% block title %}История цен {{ share.ticker }} — Investing{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">История цен: {{ share.ticker }}</h1>
+<p class="text-muted">Первая цена: {{ first_price|floatformat:4 }} · Последняя: {{ last_price|floatformat:4 }} · Абс. изменение: {{ absolute_change|floatformat:4 }} · %%: {{ percent_change|floatformat:2 }}</p>
+{% if history %}
+<table class="table table-sm table-striped">
+  <thead><tr><th>Дата</th><th>Цена</th></tr></thead>
+  <tbody>
+  {% for h in history %}
+    <tr><td>{{ h.recorded_at|date:"d.m.Y H:i" }}</td><td>{{ h.price|floatformat:4 }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">История цен пока не накоплена.</div>
+{% endif %}
+{% endblock %}

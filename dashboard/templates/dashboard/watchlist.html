@@ -1,0 +1,26 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Список наблюдения — Investing{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Список наблюдения</h1>
+  <a href="{% url 'dashboard:watchlist_create' %}" class="btn btn-primary">Добавить уровень</a>
+</div>
+{% if items %}
+<table class="table table-striped align-middle">
+  <thead><tr><th>Акция</th><th>Условие</th><th>Уровень</th><th>Статус</th><th></th></tr></thead>
+  <tbody>
+  {% for item in items %}
+    <tr>
+      <td><a href="{% url 'dashboard:detail' item.share.pk %}">{{ item.share.ticker }}</a></td>
+      <td>{{ item.get_condition_display }}</td>
+      <td>{{ item.target_price }}</td>
+      <td>{% if item.triggered %}Сработало{% else %}Ожидание{% endif %}</td>
+      <td><a href="{% url 'dashboard:watchlist_delete' item.pk %}" class="btn btn-sm btn-outline-danger">Удалить</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">Список наблюдения пуст.</div>
+{% endif %}
+{% endblock %}

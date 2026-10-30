@@ -1,23 +1,45 @@
-# investing
+# Investing Demo
 
-# PostgreSQL (Docker)
-docker-compose -f docker-compose.yml up
+Учебное Django-приложение для мониторинга акций через Tinkoff Invest API.
 
-# Tinkoff Invest API
-# TINKOFF_TOKEN указывается в config/settings.py
+## Быстрый старт
 
-# Первоначальная загрузка списка акций
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+cp .env.example .env
+python manage.py migrate
 python manage.py add_shares
+python manage.py runserver
+```
 
-# Celery Beat
-celery -A config beat
+Приложение будет доступно по адресу http://127.0.0.1:8000/.
 
-# Celery Worker
+## Внешние сервисы
+
+PostgreSQL и Redis можно поднять через Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+Для PostgreSQL установите `DB_ENGINE=postgres` в `.env`.
+
+## Фоновые задачи
+
+```bash
 celery -A config worker -l info
+celery -A config beat
+```
 
-# Celery Worker для Windows (Eventlet)
-pip install eventlet cryptography
-celery -A config worker -l info -P eventlet
+## API
 
-# API
-# /api/v1/shares — работа с акциями
+REST API доступен по адресу `/api/v1/shares/`.
+
+## Проверка
+
+```bash
+python manage.py test
+```

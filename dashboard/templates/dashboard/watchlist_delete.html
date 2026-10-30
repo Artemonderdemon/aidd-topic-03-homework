@@ -1,0 +1,11 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Удалить наблюдение — Investing{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Удалить наблюдение?</h1>
+<p>{{ object }}</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-danger">Удалить</button>
+  <a href="{% url 'dashboard:watchlist' %}" class="btn btn-secondary">Отмена</a>
+</form>
+{% endblock %}

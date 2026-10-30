@@ -1,88 +1,91 @@
 {% extends "dashboard/base.html" %}
 
-{% block title %}
-    <title>Список акций</title>
-{% endblock %}
+{% block title %}Список акций — Investing{% endblock %}
 
 {% block content %}
-
-    {% if user.is_authenticated %}
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
-            <a href="{% url 'dashboard:create' %}" class="btn btn-primary">Добавить</a>
+            <h1 class="h3 mb-1">Акции</h1>
+            <p class="text-muted mb-0">Каталог инструментов и последние цены</p>
         </div>
-    {% endif %}
+        {% if user.is_authenticated %}
+            <a href="{% url 'dashboard:create' %}" class="btn btn-primary">Добавить акцию</a>
+        {% endif %}
+    </div>
 
     {% if share_list %}
-        <table class="table table-striped">
-            <thead>
-            <tr>
-                <th scope="col">Тикер</th>
-                <th scope="col">Название</th>
-                <th scope="col">ISIN</th>
-                <th scope="col">Текущая цена</th>
-                {% if user.is_authenticated %}
-                    <th scope="col">Управление</th>
-                {% endif %}
-            </tr>
-            </thead>
-            <tbody>
-
-            {% for share in share_list %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead>
                 <tr>
-                    <td><a href="{% url 'dashboard:detail' share.id %}"> {{share.ticker}} </a></td>
-                    <td>{{share.name}}</td>
-                    <td>{{share.isin}}</td>
-                    {%  if  share.is_trend_high %}
-                        <td style="background-color: mediumseagreen">
-                            {%  else  %}
-                        <td style="background-color: palevioletred">
-                    {% endif %}
-                    {{share.last_price}} {{ share.currency }}</td>
+                    <th scope="col">Тикер</th>
+                    <th scope="col">Название</th>
+                    <th scope="col">ISIN</th>
+                    <th scope="col">Текущая цена</th>
+                    <th scope="col">Обновлено</th>
                     {% if user.is_authenticated %}
+                        <th scope="col">Управление</th>
+                    {% endif %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for share in share_list %}
+                    <tr>
                         <td>
-                            <a href="{% url 'dashboard:update' share.id %}" class="btn btn-secondary">
-                                Редактировать
-                            </a>
-                            <a href="{% url 'dashboard:delete' share.id %}" class="btn btn-danger">
-                                Удалить
+                            <a href="{% url 'dashboard:detail' share.pk %}" class="fw-semibold">
+                                {{ share.ticker }}
                             </a>
                         </td>
-                    {% endif %}
-
-                </tr>
-            {% endfor %}
-
-
-
-            </tbody>
-        </table>
-
-        <div class="btn-group" role="group" aria-label="Item pagination">
-            {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline-primary">&laquo;</a>
-            {% endif %}
-
-            {% for page_number in page_obj.paginator.page_range %}
-                {% if page_obj.number == page_number %}
-                    <button class="btn btn-outline-primary active">
-                        <span>{{ page_number }} <span class="sr-only">(current)</span></span>
-                    </button>
-                {% else %}
-                    <a href="?page={{ page_number }}" class="btn btn-outline-primary">
-                        {{ page_number }}
-                    </a>
-                {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline-primary">&raquo;</a>
-            {% endif %}
+                        <td>{{ share.name }}</td>
+                        <td><code>{{ share.isin }}</code></td>
+                        <td>
+                            {% if share.last_price is not None %}
+                                <span class="badge {% if share.is_trend_high %}text-bg-success{% elif share.is_trend_high is False %}text-bg-danger{% else %}text-bg-secondary{% endif %}">
+                                    {{ share.last_price|floatformat:2 }} {{ share.currency }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ share.updated_at|date:"d.m.Y H:i" }}</td>
+                        {% if user.is_authenticated %}
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'dashboard:update' share.pk %}" class="btn btn-outline-secondary">Изменить</a>
+                                    <a href="{% url 'dashboard:delete' share.pk %}" class="btn btn-outline-danger">Удалить</a>
+                                </div>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
 
-
+        {% if is_paginated %}
+            <nav aria-label="Пагинация акций">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                        {% if page_obj.has_previous %}
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Назад</a>
+                        {% else %}
+                            <span class="page-link">Назад</span>
+                        {% endif %}
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                        {% if page_obj.has_next %}
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+                        {% else %}
+                            <span class="page-link">Вперёд</span>
+                        {% endif %}
+                    </li>
+                </ul>
+            </nav>
+        {% endif %}
     {% else %}
-        <p>Акций еще нет</p>
+        <div class="alert alert-info">Акций еще нет.</div>
     {% endif %}
-
-
 {% endblock %}

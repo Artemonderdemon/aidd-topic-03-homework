@@ -1,0 +1,10 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Новый портфель — Investing{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Новый портфель</h1>
+<form method="post" class="card p-3">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="btn btn-primary">Создать</button>
+</form>
+{% endblock %}

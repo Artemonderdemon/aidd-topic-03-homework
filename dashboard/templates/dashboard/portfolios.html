@@ -1,0 +1,20 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Портфели — Investing{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Портфели</h1>
+  <a href="{% url 'dashboard:portfolio_create' %}" class="btn btn-primary">Создать портфель</a>
+</div>
+{% if portfolios %}
+<ul class="list-group">
+  {% for p in portfolios %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <a href="{% url 'dashboard:portfolio_detail' p.pk %}">{{ p.name }}</a>
+      <span class="badge text-bg-secondary">{{ p.cash_balance }} {{ p.cash_balance|floatformat:2 }}</span>
+    </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="alert alert-info">Портфелей нет.</div>
+{% endif %}
+{% endblock %}

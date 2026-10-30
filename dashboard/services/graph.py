@@ -1,36 +1,54 @@
-from datetime import timedelta
+"""Plotly graph rendering for a share."""
 
-from plotly.graph_objs import Scatter
-from plotly.offline import plot
-from tinkoff.invest import CandleInterval, Client
-from tinkoff.invest.utils import now
+from __future__ import annotations
 
-from config.settings import TINKOFF_TOKEN
+import plotly.graph_objects as go
+import plotly.io as pio
+
+from dashboard.services.market_data import (
+    MarketDataProvider,
+    get_market_data_provider,
+)
 
 
-def get_graph(share):
-    with Client(TINKOFF_TOKEN) as client:
-        x_data, y_data = [], []
-        for candle in client.get_all_candles(
-            figi=share.figi,
-            from_=now() - timedelta(days=180),
-            interval=CandleInterval.CANDLE_INTERVAL_DAY,
-        ):
-            x_data.append(candle.time.date())
-            y_data.append(candle.close.units)
-    plot_div = plot(
-        [
-            Scatter(
-                x=x_data,
-                y=y_data,
+def get_graph(share, provider: MarketDataProvider | None = None) -> str:
+    """Return an HTML fragment with a daily price chart for ``share``."""
+    owns_provider = provider is None
+    provider = provider or get_market_data_provider()
+    try:
+        candles = provider.get_daily_candles(share.figi, days=180)
+    finally:
+        if owns_provider:
+            provider.close()
+
+    if not candles:
+        return ""
+
+    figure = go.Figure(
+        data=[
+            go.Scatter(
+                x=[candle.time for candle in candles],
+                y=[float(candle.close) for candle in candles],
                 mode="lines",
-                name="test",
-                opacity=0.8,
-                marker_color="red",
+                name=share.ticker,
+                line={"color": "#0d6efd", "width": 2},
+                hovertemplate="%{x|%d.%m.%Y}<br>%{y:.2f} "
+                f"{share.currency}<extra></extra>",
             )
-        ],
-        output_type="div",
-        show_link=False,
-        link_text="",
+        ]
     )
-    return plot_div
+    figure.update_layout(
+        template="plotly_white",
+        height=420,
+        margin={"l": 20, "r": 20, "t": 30, "b": 20},
+        xaxis_title="Дата",
+        yaxis_title=f"Цена, {share.currency}",
+        hovermode="x unified",
+        showlegend=False,
+    )
+    return pio.to_html(
+        figure,
+        include_plotlyjs="cdn",
+        full_html=False,
+        config={"displayModeBar": False, "responsive": True},
+    )

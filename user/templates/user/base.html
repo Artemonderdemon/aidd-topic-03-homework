@@ -1,23 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Investing / Авторизация</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Investing — вход{% endblock %}</title>
     {% load static %}
-    <link href="{% static 'user/css/bootstrap.min.css'%}" rel="stylesheet">
-    <link href="{% static 'user/css/signin.css'%}" rel="stylesheet">
-
+    <link href="{% static 'user/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'user/css/signin.css' %}" rel="stylesheet">
 </head>
-<body>
-
-<main class="form-signin">
-
-    {% block content %}
-    {% endblock %}
-
+<body class="text-center">
+<main class="form-signin w-100 m-auto">
+    {% block content %}{% endblock %}
 </main>
-
-
 </body>
 </html>
